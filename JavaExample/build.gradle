@@ -1,0 +1,83 @@
+plugins {
+    id 'java'
+}
+
+group 'org.example'
+version '1.0-SNAPSHOT'
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    testImplementation 'org.junit.jupiter:junit-jupiter-api:5.8.1'
+    testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.8.1'
+}
+
+test {
+    useJUnitPlatform()
+}
+
+task hello{
+    println 'Hello Task'
+}
+
+task createSchema {   // Задача создания базы данных
+    println 'created Schema'
+}
+
+task loadTestData {  // Определяем задачу, связанную с задачей createSchema
+    dependsOn createSchema
+    doLast{
+        println 'loadedTestData'
+    }
+}
+
+// Определяем последовательность выполнения команды в задаче - выбираем первую команду
+loadTestData.doFirst {
+    println 'Started loading test data'
+}
+
+//Задача с условным свойствомю Попробуйте запустить ее из консоли с двумя разными аргументами:
+// 1)gradle myTask -Pcondition=false
+// 2)gradle myTask -Pcondition=true
+task myTask {
+    def condition = project.hasProperty('condition') ? project.getProperty('condition'): 'true'
+    onlyIf {
+        return condition.toBoolean()
+    }
+    doLast{
+        println "Task is executing"
+    }
+
+
+    //пример, в котором устанавливается свойство задачи. Определяется значения didWork задачи DefaultTask
+    task firstTask{
+        doLast {
+            println "First task is executing"
+            didWork = true  // Указываем, что задача выполнила поставленную цель
+        }
+    }
+
+    //
+    task secondTask {
+        if (project.hasProperty('skipSecondTask') && project.skipSecondTask.toBoolean()){
+            println "Second task is skipped ..."
+            didWork = false
+        }
+        else {
+            println "Second task is executed"
+            didWork = true
+        }
+    }
+    task thirdTask(dependsOn: "secondTask"){
+        doLast{
+            if(secondTask.didWork){
+                println "Task 3 is joined"
+            }
+            else {
+                println "Task 3 is not joined"
+            }
+        }
+    }
+}
